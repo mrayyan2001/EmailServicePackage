@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace EmailServicePackage
 {
-    internal class EmailSettings
+    internal class SmtpSettings
     {
         public string From { get; set; } = string.Empty;
         public string AppPassword { get; set; } = string.Empty;

@@ -22,13 +22,25 @@ dotnet add package MH.EmailService
 
 Add the following section to your `appsettings.json`:
 
+**For using SMTP**
+
 ```json
-"EmailSettings": {
-  "from": "your-email@example.com",
-  "appPassword": "your-app-password",
-  "host": "smtp.example.com",
-  "port": 587
+"SmtpSettings": {
+  "From": "your-email@example.com",
+  "AppPassword": "your-app-password",
+  "Host": "smtp.example.com",
+  "Port": 587
 }
+```
+
+**For using SendGrid**
+
+```json
+"SendGridSettings": {
+    "ApiKey": "your-sendgrid-api-key",
+    "From": "your-email",
+    "FromName": "your-name",
+  }
 ```
 
 ## Usage
@@ -38,33 +50,41 @@ Add the following section to your `appsettings.json`:
 In your `Program.cs` or `Startup.cs`, register the service:
 
 ```csharp
-builder.Services.AddEmailService(builder.Configuration);
+builder.Services.AddSmtpService(builder.Configuration); // For SMTP
+// or
+builder.Services.AddSendGridEmailService(builder.Configuration); // For SendGrid
 ```
 
 ### 2. Inject and Use IEmailService
 
-In your classes or controllers, inject `IEmailService` and use it to send emails:
+In your classes or controllers, inject `ISmtpService` or `ISendGridService` and use it to send emails:
 
 ```csharp
 public class NotificationService
 {
-    private readonly IEmailService _emailService;
+    private readonly ISmtpService _smtpService;
+    private readonly ISendGridService _sendGridService;
 
-    public NotificationService(IEmailService emailService)
+    public NotificationService(ISmtpService smtpService, ISendGridService sendGridService)
     {
-        _emailService = emailService;
+        _smtpService = smtpService;
+        _sendGridService = sendGridService;
     }
 
-    public async Task NotifyUserAsync()
+    public async Task SendNotification(string to, string subject, string body)
     {
-        var email = new SendEmailDto
+        var emailDto = new SendEmailDto
         {
-            to = "recipient@example.com",
-            subject = "Welcome!",
-            body = "Thank you for signing up."
+            To = to,
+            Subject = subject,
+            Body = body
         };
 
-        await _emailService.SendEmailAsync(email);
+        // For SMTP
+        await _smtpService.SendEmailAsync(emailDto);
+
+        // For SendGrid
+        await _sendGridService.SendEmailAsync(emailDto);
     }
 }
 ```
@@ -75,18 +95,26 @@ public class NotificationService
 
 | Property  | Type   | Description             |
 | --------- | ------ | ----------------------- |
-| `to`      | string | Recipient email address |
-| `subject` | string | Email subject           |
-| `body`    | string | Email body content      |
+| `To`      | string | Recipient email address |
+| `Subject` | string | Email subject           |
+| `Body`    | string | Email body content      |
 
-### `EmailSettings`
+### `SmtpSettings`
 
 | Property      | Type   | Description                  |
 | ------------- | ------ | ---------------------------- |
-| `from`        | string | Sender email address         |
-| `appPassword` | string | SMTP app password or token   |
-| `host`        | string | SMTP server host             |
-| `port`        | int    | SMTP server port (e.g., 587) |
+| `From`        | string | Sender email address         |
+| `AppPassword` | string | SMTP app password or token   |
+| `Host`        | string | SMTP server host             |
+| `Port`        | int    | SMTP server port (e.g., 587) |
+
+### `SendGridSettings`
+
+| Property   | Type   | Description          |
+| ---------- | ------ | -------------------- |
+| `ApiKey`   | string | SendGrid API key     |
+| `From`     | string | Sender email address |
+| `FromName` | string | Sender name          |
 
 ## Authors
 
