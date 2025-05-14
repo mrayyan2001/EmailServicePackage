@@ -1,14 +1,16 @@
 # EmailService
 
-A lightweight .NET 8 library for sending emails via SMTP, designed for seamless integration with ASP.NET Core applications.
+A lightweight .NET 8 library for sending emails via **SMTP** or **SendGrid**, designed for seamless integration with ASP.NET Core applications.
 
 ## Features
 
+- Supports **SMTP** and **SendGrid** email providers
 - Simple and intuitive API for sending emails
-- Supports SMTP configuration via `appsettings.json`
+- Supports configuration via `appsettings.json`
 - Built-in dependency injection support
-- Clean separation of concerns using `IEmailService` interface
-- Fully configurable via `EmailSettings`
+- Clean separation of concerns using `ISmtpService` and `ISendGridService`
+- Shared DTO structure (`SendEmailDto`) for both providers
+- Optional recipient name support (`ToName`)
 
 ## Installation
 
@@ -20,9 +22,9 @@ dotnet add package MH.EmailService
 
 ## Configuration
 
-Add the following section to your `appsettings.json`:
+Add one or both of the following sections to your `appsettings.json`:
 
-**For using SMTP**
+**SMTP:**
 
 ```json
 "SmtpSettings": {
@@ -33,31 +35,28 @@ Add the following section to your `appsettings.json`:
 }
 ```
 
-**For using SendGrid**
+**SendGrid:**
 
 ```json
 "SendGridSettings": {
-    "ApiKey": "your-sendgrid-api-key",
-    "From": "your-email",
-    "FromName": "your-name",
-  }
+  "ApiKey": "your-sendgrid-api-key",
+  "From": "your-email@example.com",
+  "FromName": "Your Name"
+}
 ```
 
 ## Usage
 
-### 1. Register the EmailService
+### 1. Register the Email Services
 
-In your `Program.cs` or `Startup.cs`, register the service:
+In `Program.cs`:
 
 ```csharp
-builder.Services.AddSmtpService(builder.Configuration); // For SMTP
-// or
-builder.Services.AddSendGridEmailService(builder.Configuration); // For SendGrid
+builder.Services.AddSmtpService(builder.Configuration);      // For SMTP
+builder.Services.AddSendGridService(builder.Configuration);  // For SendGrid
 ```
 
-### 2. Inject and Use IEmailService
-
-In your classes or controllers, inject `ISmtpService` or `ISendGridService` and use it to send emails:
+### 2. Inject and Use Email Services
 
 ```csharp
 public class NotificationService
@@ -71,20 +70,21 @@ public class NotificationService
         _sendGridService = sendGridService;
     }
 
-    public async Task SendNotification(string to, string subject, string body)
+    public async Task SendNotificationAsync(string to, string subject, string body, string? toName = null)
     {
-        var emailDto = new SendEmailDto
+        var email = new SendEmailDto
         {
             To = to,
+            ToName = toName,
             Subject = subject,
             Body = body
         };
 
-        // For SMTP
-        await _smtpService.SendEmailAsync(emailDto);
+        // Use SMTP
+        await _smtpService.SendEmailAsync(email);
 
-        // For SendGrid
-        await _sendGridService.SendEmailAsync(emailDto);
+        // Or use SendGrid
+        await _sendGridService.SendEmailAsync(email);
     }
 }
 ```
@@ -93,11 +93,12 @@ public class NotificationService
 
 ### `SendEmailDto`
 
-| Property  | Type   | Description             |
-| --------- | ------ | ----------------------- |
-| `To`      | string | Recipient email address |
-| `Subject` | string | Email subject           |
-| `Body`    | string | Email body content      |
+| Property  | Type   | Description                     |
+| --------- | ------ | ------------------------------- |
+| `To`      | string | Recipient email address         |
+| `ToName`  | string | (Optional) Recipient name       |
+| `Subject` | string | Email subject                   |
+| `Body`    | string | Email body content (plain/html) |
 
 ### `SmtpSettings`
 
@@ -116,6 +117,11 @@ public class NotificationService
 | `From`     | string | Sender email address |
 | `FromName` | string | Sender name          |
 
+## Documentation
+
+- 📄 [SMTP Setup Guide](docs/SMTP.md)
+- 📄 [SendGrid Setup Guide](docs/SendGrid.md)
+
 ## Authors
 
 - Mohammad
@@ -127,4 +133,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Repository
 
-For more information, visit the [GitHub repository](https://github.com/mrayyan2001/EmailServicePackage).
+[GitHub Repository](https://github.com/mrayyan2001/EmailServicePackage)
